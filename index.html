@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Brewsphere</title>
+<style>
+:root{--g:#16c060;--r:#e5384a;--a:#f5a623;--bg:#000;--c:#111;--l:#262626;--t:#eee}
+*{box-sizing:border-box}body{margin:0;background:#000;color:var(--t);font-family:system-ui,'Noto Sans Thai',sans-serif}
+input,select,textarea{width:100%;background:#1a1a1a;color:#fff;border:1px solid #333;border-radius:8px;padding:8px;font:inherit}
+label{display:block;font-size:12px;color:#aaa;margin:6px 0 0}
+button{background:var(--a);color:#000;border:0;border-radius:8px;padding:9px 14px;font-weight:700;cursor:pointer;margin:6px 6px 0 0}
+button.s{background:#333;color:#fff}button.d{background:var(--g)}button.x{background:none;color:#fff;float:right;font-size:18px}
+#login{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:99;transition:.7s}
+#login.hide{opacity:0;transform:scale(1.4);filter:blur(10px);pointer-events:none}
+#lbox{width:320px;padding:28px;border:1px solid var(--a);border-radius:16px;text-align:center;animation:up .8s}
+#lbox h1{color:var(--a);margin:0 0 10px}#lbox.shake{animation:sh .4s}#le{color:var(--r);font-size:13px;min-height:18px}
+#lb{width:100%;margin:14px 0 0}#lb.ld::after{content:'';display:inline-block;width:12px;height:12px;margin-left:8px;border:2px solid #000;border-top-color:transparent;border-radius:50%;animation:sp .6s linear infinite}
+#lb.ok{background:var(--g)}
+@keyframes up{from{opacity:0;transform:translateY(30px)}}@keyframes sp{to{transform:rotate(360deg)}}
+@keyframes sh{25%{transform:translateX(-10px)}75%{transform:translateX(10px)}}
+#app{display:none;padding:10px;max-width:1400px;margin:auto}#app.show{display:block;animation:up .8s}
+nav{display:flex;gap:8px;margin-bottom:10px;position:sticky;top:0;background:#000;padding:6px 0;z-index:5}
+nav button{flex:1;background:#1a1a1a;color:#fff;margin:0}nav button.on{background:var(--a);color:#000}
+.bar{background:var(--c);border:1px solid var(--l);border-radius:12px;padding:10px;margin:10px 0;display:flex;gap:10px;overflow-x:auto;align-items:stretch}
+.bar>b{writing-mode:horizontal-tb;color:var(--a);white-space:nowrap;align-self:center}
+.chip{min-width:180px;background:#1d1d1d;border:1px solid var(--a);border-radius:10px;padding:8px;cursor:pointer;display:flex;flex-direction:column}
+.chip span,.chip small{color:#aaa;font-size:12px}
+#tanks{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}
+.tk{border-radius:12px;padding:12px;cursor:pointer;border:2px solid;transition:.2s;min-height:150px}.tk:hover{transform:translateY(-3px)}
+.tk.grn{border-color:var(--g);background:#06220f}.tk.red{border-color:var(--r);background:#2a0a10}
+.tk h3{margin:0;display:flex;justify-content:space-between}.tk em{font-style:normal;font-size:12px;padding:2px 8px;border-radius:9px;background:#0006}
+.tk h2{margin:6px 0;color:#fff}.tk p{margin:3px 0;font-size:13px;color:#ccc}.tk p b{color:#fff}
+#m{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:50;padding:10px}
+#m.on{display:flex}.mb{background:#111;border:1px solid var(--a);border-radius:14px;padding:16px;width:min(640px,100%);max-height:92vh;overflow:auto;animation:up .3s}
+.r3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:6px}.r2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.card{background:var(--c);border:1px solid var(--l);border-radius:12px;padding:12px;margin:8px 0}
+.two{display:grid;grid-template-columns:1.2fr 1fr;gap:12px}@media(max-width:800px){.two{grid-template-columns:1fr}}
+table{width:100%;border-collapse:collapse}th,td{padding:8px;border-bottom:1px solid var(--l);text-align:left;font-size:14px}th{color:var(--a)}
+tr.cl{cursor:pointer}tr.cl:hover{background:#1d1d1d}h4{margin:12px 0 0;color:var(--a)}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--g);color:#000;padding:10px 20px;border-radius:20px;font-weight:700;opacity:0;transition:.3s;z-index:99}#toast.on{opacity:1}
+</style></head><body>
+<div id="login"><div id="lbox"><h1>🍺 Brewsphere</h1>
+<input id="u" placeholder="Username" autocomplete="username"><label></label>
+<input id="p" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key=='Enter')login()">
+<div id="le"></div><button id="lb" onclick="login()">เข้าสู่ระบบ</button></div></div>
+
+<div id="app">
+<nav><button class="on" onclick="go(1)">1 ผลิต / Fermenter</button><button onclick="go(2)">2 วัตถุดิบ</button><button onclick="go(3)">3 สต็อก</button><button class="s" onclick="out()">ออก</button></nav>
+
+<section id="p1">
+ <div class="bar"><b>📅 คิวต้ม</b><div id="qbar" style="display:flex;gap:10px"></div></div>
+ <div id="tanks"></div>
+ <div class="bar"><b>🏷️ รอติดแสตมป์</b><div id="abar" style="display:flex;gap:10px"></div></div>
+</section>
+
+<section id="p2" style="display:none"><div class="two">
+ <div class="card"><h3>บันทึกวัตถุดิบ</h3><div id="p2f"></div><button class="d" onclick="newR()">💾 บันทึกสูตร</button></div>
+ <div><h3>เบียร์ที่บันทึกแล้ว (คลิกเพื่อใส่ OEM/Packaging/Delivery และลงคิวต้ม)</h3><div id="rl"></div></div>
+</div></section>
+
+<section id="p3" style="display:none"><div class="two">
+ <div class="card"><h3>สต็อกคงเหลือ</h3><table><thead><tr><th>เบียร์</th><th>Owner</th><th>แสตมป์</th><th>Kegs</th></tr></thead><tbody id="st"></tbody></table></div>
+ <div><div class="card"><h3 id="oh">บันทึกออเดอร์</h3><div id="of"></div>
+  <button class="d" onclick="saveO()">💾 บันทึก</button><button class="s" onclick="resetO()">ล้างฟอร์ม</button></div>
+  <div class="card"><h4>ออเดอร์ล่าสุด (คลิกเพื่อแก้ไข)</h4><table id="ol"></table></div></div>
+</div></section>
+</div>
+
+<div id="m"></div><div id="dl"></div><div id="toast"></div>
+
+<script>
+/* ===== ตั้งค่า: ใส่ URL ของ Apps Script Web App ===== */
+const API='PASTE_YOUR_WEB_APP_URL_HERE';
+
+const $=s=>document.querySelector(s);
+let T=sessionStorage.getItem('t')||'',S=null,pg=1,oid='',timer;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function call(a,x){const r=await fetch(API,{method:'POST',body:JSON.stringify({a,t:T,...x})});const j=await r.json();if(!j.ok){if(j.err==='auth')out();throw j.err}return j}
+const toast=(t='บันทึกแล้ว ✔')=>{const e=$('#toast');e.textContent=t;e.classList.add('on');setTimeout(()=>e.classList.remove('on'),1800)};
+const M=h=>{$('#m').innerHTML=`<div class=mb><button class=x onclick=cm()>✕</button>${h}</div>`;$('#m').classList.add('on')};
+const cm=()=>$('#m').classList.remove('on');
+
+/* ---- login ---- */
+async function login(){const b=$('#lb');b.classList.add('ld');$('#le').textContent='';
+ try{const j=await call('login',{u:$('#u').value,p:$('#p').value});T=j.token;sessionStorage.setItem('t',T);
+  b.classList.remove('ld');b.classList.add('ok');b.textContent='✔ เข้าสู่ระบบแล้ว';
+  setTimeout(()=>{$('#login').classList.add('hide');start()},900)}
+ catch(e){b.classList.remove('ld');$('#le').textContent='ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';$('#lbox').classList.add('shake');setTimeout(()=>$('#lbox').classList.remove('shake'),500)}}
+function out(){sessionStorage.removeItem('t');location.reload()}
+
+/* ---- field helpers ---- */
+const f=(k,l,cat,type='text',v='')=>`<label>${l}<input data-k="${k}" type="${type}" value="${esc(v)}" ${cat?`list="dl-${cat}" data-o="${cat}"`:''}></label>`;
+function gf(r){const d={},o=[];r.querySelectorAll('[data-k]').forEach(i=>{const v=i.value.trim();d[i.dataset.k]=v;if(i.dataset.o&&v)o.push([i.dataset.o,v])});return{d,o}}
+function dls(){const m={};S.opts.forEach(o=>(m[o.cat]=m[o.cat]||[]).push(o.val));m.stockBeer=S.stock.map(s=>s.beer);
+ $('#dl').innerHTML=Object.keys(m).map(c=>`<datalist id="dl-${c}">${m[c].map(v=>`<option value="${esc(v)}">`).join('')}</datalist>`).join('')}
+
+/* ---- app ---- */
+function start(){$('#app').classList.add('show');buildP2();buildP3();load();clearInterval(timer);timer=setInterval(load,8000)}
+function go(n){pg=n;[1,2,3].forEach(i=>$('#p'+i).style.display=i==n?'':'none');
+ document.querySelectorAll('nav button').forEach((b,i)=>b.classList.toggle('on',i==n-1));render()}
+async function load(){try{S=await call('all');render()}catch(e){}}
+function render(){if(!S)return;dls();[0,r1,r2,r3][pg]()}
+
+/* ===== PAGE 1 ===== */
+const L=(a,b)=>b?`<p>${a}: <b>${esc(b)}</b></p>`:'';
+function r1(){
+ $('#qbar').innerHTML=S.queue.map(q=>`<div class=chip onclick="qm('${q.id}')"><b>${esc(q.beer)}</b><span>${esc(q.owner)}</span><small>📅 ${esc(q.brewDate)} ${esc(q.note)}</small></div>`).join('')||'<i style="color:#777">ไม่มีคิวต้ม</i>';
+ $('#tanks').innerHTML=S.tanks.map(t=>{const b=t.status==='busy';
+  return `<div class="tk ${b?'red':'grn'}" onclick="tm('${t.id}')"><h3>Fermenter ${t.id}<em>${b?'ไม่ว่าง':'ว่าง'}</em></h3>`+
+  (b?`<h2>${esc(t.beer)}</h2>`+L('Owner',t.owner)+L('Brewdate',t.brewDate)+L('ค่าน้ำตาล',t.gravity)+L('Temp',t.temp&&t.temp+' °C')+L('Dry hop',t.dryHop)+L('ถ่ายยีสต์',t.transfer)+
+   L('บรรจุ',t.packDate&&t.packDate+' ('+(t.packKegs||0)+' ถัง)')+L('ติดแสตมป์',t.stampDate&&t.stampDate+' ('+(t.stampKegs||0)+' ถัง)')+L('ชนิดแสตมป์',t.stampType):'<p>แตะเพื่อลงเบียร์เข้าถัง</p>')+'</div>'}).join('');
+ $('#abar').innerHTML=S.await.map(a=>`<div class=chip onclick="am('${a.id}')"><b>${esc(a.beer)}</b><span>${esc(a.owner)}</span><small>บรรจุ ${esc(a.packDate)} • ${esc(a.packKegs)} ถัง</small></div>`).join('')||'<i style="color:#777">ไม่มีรายการรอ</i>'}
+
+function tm(id){const t=S.tanks.find(x=>x.id==id),b=t.status==='busy';
+ const qs=!b&&S.queue.length?`<label>เลือกจากคิวต้ม<select id=qs onchange="pick(this)"><option value="">— กรอกเอง —</option>${S.queue.map(q=>`<option value="${q.id}" data-b="${esc(q.beer)}" data-o="${esc(q.owner)}" data-d="${esc(q.brewDate)}">${esc(q.beer)} (${esc(q.owner)}) ${esc(q.brewDate)}</option>`).join('')}</select></label>`:'';
+ M(`<h3>Fermenter ${id}</h3>${qs}<div id=mf><div class=r2>${f('beer','ชื่อเบียร์','beer','text',t.beer)}${f('owner','Owner','owner','text',t.owner)}</div>
+ <div class=r2>${f('brewDate','Brewdate',0,'date',t.brewDate)}${f('temp','Temp (°C)',0,'number',t.temp)}</div>${f('gravity','ค่าน้ำตาล (เช่น OG 1.050 / 12°P → 1.012)',0,'text',t.gravity)}
+ <div class=r2>${f('dryHop','วัน Dry hop',0,'date',t.dryHop)}${f('transfer','วันถ่ายยีสต์',0,'date',t.transfer)}</div>
+ <div class=r2>${f('packDate','วันบรรจุ',0,'date',t.packDate)}${f('packKegs','บรรจุได้ (ถัง)',0,'number',t.packKegs)}</div>
+ <div class=r3>${f('stampDate','วันติดแสตมป์',0,'date',t.stampDate)}${f('stampKegs','ติด (ถัง)',0,'number',t.stampKegs)}${f('stampType','ชนิดแสตมป์','stamp','text',t.stampType)}</div></div>
+ <button class=d onclick="saveT('${id}')">💾 บันทึก</button>${b?`<button onclick="finT('${id}')">✅ เบียร์เสร็จ → รอติดแสตมป์</button>`:''}`)}
+function pick(s){const o=s.selectedOptions[0];if(!o.value)return;const m=$('#mf');m.querySelector('[data-k=beer]').value=o.dataset.b;m.querySelector('[data-k=owner]').value=o.dataset.o;m.querySelector('[data-k=brewDate]').value=o.dataset.d}
+async function saveT(id){const{d,o}=gf($('#mf'));d.id=id;d.status=d.beer?'busy':'free';
+ try{await call('saveTank',{d,opts:o,qid:$('#qs')?.value||''});cm();toast();load()}catch(e){alert(e)}}
+async function finT(id){const{d,o}=gf($('#mf'));d.id=id;if(!d.packDate||!d.packKegs)return alert('กรอกวันบรรจุและจำนวนถังก่อน');
+ try{await call('finishTank',{d,opts:o});cm();toast('ย้ายไปช่องรอติดแสตมป์แล้ว');load()}catch(e){alert(e)}}
+function qm(id){const q=S.queue.find(x=>x.id==id),free=S.tanks.filter(t=>t.status!=='busy');
+ M(`<h3>${esc(q.beer)} <small>(${esc(q.owner)})</small></h3><p>Brewdate: ${esc(q.brewDate)} ${esc(q.note)}</p>
+ ${free.length?`<label>ลงถัง<select id=ft>${free.map(t=>`<option>${t.id}</option>`).join('')}</select></label><button class=d onclick="startQ('${id}')">เริ่มต้ม / ลงถัง</button>`:'<p style="color:var(--r)">ไม่มี Fermenter ว่าง</p>'}`)}
+async function startQ(id){const q=S.queue.find(x=>x.id==id);
+ try{await call('saveTank',{d:{id:$('#ft').value,status:'busy',beer:q.beer,owner:q.owner,brewDate:q.brewDate},qid:id});cm();toast();load()}catch(e){alert(e)}}
+function am(id){const a=S.await.find(x=>x.id==id);
+ M(`<h3>${esc(a.beer)} <small>(${esc(a.owner)})</small></h3><p>บรรจุ ${esc(a.packDate)} • ${esc(a.packKegs)} ถัง</p><div id=mf>
+ <div class=r3>${f('stampDate','วันติดแสตมป์',0,'date',new Date().toISOString().slice(0,10))}${f('stampKegs','จำนวน (ถัง)',0,'number',a.packKegs)}${f('stampType','ชนิดแสตมป์','stamp')}</div></div>
+ <button class=d onclick="stampDone('${id}')">🏷️ ติดแสตมป์เรียบร้อย → เข้าสต็อก</button>`)}
+async function stampDone(id){const{d,o}=gf($('#mf'));d.id=id;if(!d.stampDate||!d.stampKegs)return alert('กรอกให้ครบ');
+ try{await call('stampDone',{d,opts:o});cm();toast();load()}catch(e){alert(e)}}
+
+/* ===== PAGE 2 ===== */
+const MAT=[['m','มอล์ต',6,'กก.','malt'],['h','ฮอปส์',6,'กก.','hop'],['y','ยีสต์',2,'กรัม','yeast'],['o','อื่นๆ',4,'','other']];
+function grp(p,t,n,u,cat){return `<h4>${t}</h4>`+[...Array(n)].map((_,i)=>{const k=p+(i+1);
+ return `<div class=r3 style="${u?'':'grid-template-columns:2fr 1fr'}">${f(k+'n','ชื่อ',cat)}${u?f(k+'q','จำนวน ('+u+')',0,'number'):''}${f(k+'p','ราคา (฿)',0,'number')}</div>`}).join('')}
+function buildP2(){$('#p2f').innerHTML=`<div class=r2 id=rh>${f('beer','ชื่อเบียร์','beer')}${f('owner','Owner','owner')}</div><div id=rm>${MAT.map(m=>grp(m[0],m[1],m[2],m[3],m[4])).join('')}</div>`}
+async function newR(){const{d,o}=gf($('#p2f'));if(!d.beer)return alert('ใส่ชื่อเบียร์');
+ try{await call('saveRecipe',{d,opts:o});buildP2();toast();load()}catch(e){alert(e)}}
+const sum=r=>Object.keys(r).filter(k=>/^[mhyo]\d+p$/.test(k)).reduce((a,k)=>a+Number(r[k]||0),0);
+function r2(){$('#rl').innerHTML=S.recipes.map(r=>`<div class="card chip" style="cursor:pointer" onclick="rm('${r.id}')"><b>${esc(r.beer)}</b><span>${esc(r.owner)}</span><small>วัตถุดิบ ฿${sum(r).toLocaleString()} • ${r.status==='queued'?'ลงคิวแล้ว':'ร่าง'}</small></div>`).join('')||'<i style="color:#777">ยังไม่มีสูตร</i>'}
+function rm(id){const r=S.recipes.find(x=>x.id==id);
+ const lines=MAT.map(m=>[...Array(m[2])].map((_,i)=>{const k=m[0]+(i+1);return r[k+'n']?`<tr><td>${m[1]}: ${esc(r[k+'n'])}</td><td>${r[k+'q']?esc(r[k+'q'])+' '+m[3]:''}</td><td>฿${Number(r[k+'p']||0).toLocaleString()}</td></tr>`:''}).join('')).join('');
+ M(`<h3>${esc(r.beer)} <small>(${esc(r.owner)})</small></h3><table>${lines}</table>
+ <div id=mf oninput="calc('${id}')"><div class=r3 style="grid-template-columns:1fr 1fr 1fr">${f('oem','ค่า OEM (฿)',0,'number',r.oem)}${f('pack','Packaging (฿)',0,'number',r.pack)}${f('deliv','Delivery Fee (฿)',0,'number',r.deliv)}</div>
+ <h3 id=tot style="color:var(--a)"></h3><h4>ลงคิววันต้ม (สร้างอีเวนต์ใน Google Calendar)</h4><div class=r2>${f('brewDate','วันต้ม',0,'date')}${f('note','หมายเหตุ')}</div></div>
+ <button class=s onclick="saveR('${id}',0)">💾 บันทึกค่าใช้จ่าย</button><button class=d onclick="saveR('${id}',1)">📅 ลงคิวต้ม</button>`);calc(id)}
+function calc(id){const r=S.recipes.find(x=>x.id==id),{d}=gf($('#mf'));$('#tot').textContent='รวมทั้งหมด ฿'+(sum(r)+['oem','pack','deliv'].reduce((a,k)=>a+Number(d[k]||0),0)).toLocaleString()}
+async function saveR(id,q){const{d}=gf($('#mf'));d.id=id;if(q&&!d.brewDate)return alert('เลือกวันต้ม');
+ try{await call(q?'queueRecipe':'saveRecipe',{d});cm();toast(q?'ลงคิวแล้ว ✔':undefined);load()}catch(e){alert(e)}}
+
+/* ===== PAGE 3 ===== */
+function buildP3(){$('#of').innerHTML=f('beer','ชื่อเบียร์ (ที่ร้านซื้อ)','stockBeer')+f('shop','ร้านค้า','shop')+f('kegs','จำนวน (Kegs)',0,'number')+f('note','หมายเหตุ')}
+function r3(){$('#st').innerHTML=S.stock.map(s=>`<tr><td>${esc(s.beer)}</td><td>${esc(s.owner)}</td><td>${esc(s.stampType)} ${esc(s.stampDate)}</td><td><b style="color:${s.kegs>0?'var(--g)':'var(--r)'}">${s.kegs}</b></td></tr>`).join('')||'<tr><td colspan=4>ยังไม่มีสต็อก (เกิดเมื่อติดแสตมป์ในหน้า 1)</td></tr>';
+ $('#ol').innerHTML='<tr><th>เบียร์</th><th>ร้าน</th><th>Kegs</th><th>เวลา</th></tr>'+S.orders.map(o=>`<tr class=cl onclick="editO('${o.id}')"><td>${esc(o.beer)}</td><td>${esc(o.shop)}</td><td>${esc(o.kegs)}</td><td>${esc(o.ts)}</td></tr>`).join('')}
+function editO(id){const o=S.orders.find(x=>x.id==id);oid=id;$('#oh').textContent='แก้ไขออเดอร์';
+ ['beer','shop','kegs','note'].forEach(k=>$('#of [data-k='+k+']').value=o[k]||'')}
+function resetO(){oid='';$('#oh').textContent='บันทึกออเดอร์';buildP3()}
+async function saveO(){const{d,o}=gf($('#of'));if(!d.beer||!d.shop||!d.kegs)return alert('กรอกให้ครบ');if(oid)d.id=oid;
+ try{await call('saveOrder',{d,opts:o.filter(x=>x[0]!=='stockBeer')});resetO();toast();load()}catch(e){alert(e)}}
+
+if(T){$('#login').classList.add('hide');start()}
+</script></body></html>
